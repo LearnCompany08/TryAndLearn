@@ -7,9 +7,12 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "clean": "rm -rf node_modules && rm -f yarn.lock && rm -rf ios/Pods && rm -f ios/Podfile.lock",
+    "pod": "cd ios && pod install && cd .."
   },
   "dependencies": {
+    "patch-package": "^8.0.0",
     "react": "18.1.0",
     "react-native": "0.70.4"
   },
