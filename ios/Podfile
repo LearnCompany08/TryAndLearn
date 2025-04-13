@@ -7,22 +7,13 @@ install! 'cocoapods', :deterministic_uuids => false
 target 'sentryApp' do
   config = use_native_modules!
 
-  # Flags change depending on the env values.
   flags = get_default_flags()
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # Hermes is now enabled by default. Disable by setting this flag to false.
-    # Upcoming versions of React Native may rely on get_default_flags(), but
-    # we make it explicit here to aid in the React Native upgrade process.
     :hermes_enabled => true,
     :fabric_enabled => flags[:fabric_enabled],
-    # Enables Flipper.
-    #
-    # Note that if you have use_frameworks! enabled, Flipper will not work and
-    # you should disable the next line.
     :flipper_configuration => FlipperConfiguration.enabled,
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
@@ -32,12 +23,38 @@ target 'sentryApp' do
   end
 
   post_install do |installer|
+    # Add <functional> to FlipperTransportTypes.h if missing
+    installer.pods_project.targets.each do |target|
+      if target.name == 'Flipper'
+        file_path = 'Pods/Flipper/xplat/Flipper/FlipperTransportTypes.h'
+        if File.exist?(file_path)
+          contents = File.read(file_path)
+          unless contents.include?('#include <functional>')
+            File.chmod(0755, file_path)
+            File.open(file_path, 'w') do |file|
+              file.puts('#include <functional>')
+              file.puts(contents)
+            end
+          end
+        end
+      end
+    end
+
+    # Apply standard React Native post install
     react_native_post_install(
       installer,
-      # Set `mac_catalyst_enabled` to `true` in order to apply patches
-      # necessary for Mac Catalyst builds
       :mac_catalyst_enabled => false
     )
+
+    # Apply workaround for Xcode 12.5 M1
     __apply_Xcode_12_5_M1_post_install_workaround(installer)
+
+    # Patch RCT-Folly Time.h iOS version macro
+    time_header = 'Pods/RCT-Folly/folly/portability/Time.h'
+    if File.exist?(time_header)
+      text = File.read(time_header)
+      new_contents = text.gsub('__IPHONE_10_0', '__IPHONE_12_0')
+      File.open(time_header, 'w') { |file| file.puts new_contents }
+    end
   end
 end
