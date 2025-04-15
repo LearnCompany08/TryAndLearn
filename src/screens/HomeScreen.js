@@ -21,17 +21,18 @@ import {
 } from "../components"
 import { useNavigation } from '@react-navigation/native'
 import onDisplayNotification from '../notification/Notification'
+import useCounter from './CustomHook'
 
 const ITEM_HEIGHT=200;
 
 export default function HomeScreen() {
     const [userData, setUserData] = useState([])
-    const [counter, setCounter] = useState(0)
     const navigation = useNavigation()
     const [page, setPage] = useState(1)
     const [isLoading, setIsloading] = useState(false)
     const onEndReachedCalledDuringMomentum = useRef(false);
-
+    const [counter,increment,decrement]= useCounter(0)
+    
     const getUserData = useCallback(async () => {
         try {
             setIsloading(true)
@@ -88,27 +89,19 @@ export default function HomeScreen() {
         />;
     }, [userData]);
 
-    const addHandler = useCallback(() => {
-        setCounter(counter + 1)
-    })
-
-    const subtractHandler = useCallback(() => {
-        setCounter(counter - 1)
-    })
-
     const RenderAddSubCounter = React.memo(() => (
         <View style={styles.counterContainer}>
             <CustomButton
                 title={"Add"}
-                onPress={addHandler}
+                onPress={increment}
             />
             <Text style={styles.counterStyle}>{counter}</Text>
             <CustomButton
                 title={"Sub"}
-                onPress={subtractHandler}
+                onPress={decrement}
             />
         </View>
-    ))
+    ),[counter])
 
     const renderCounter = useMemo(() => {
         return <RenderAddSubCounter counter={counter} />
